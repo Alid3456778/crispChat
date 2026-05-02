@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: #0f172a;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+
+  .loading {
+    text-align: center;
+  }
+
+  /* Fullscreen Crisp */
+  .crisp-client .cc-kv6t {
+    width: 100% !important;
+    height: 100% !important;
+    bottom: 0 !important;
+    right: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  /* Hide small icon */
+  .crisp-client .cc-1brb6 {
+    display: none !important;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="loading">
+  <h2>Opening Chat...</h2>
+  <p>Please wait</p>
+</div>
+
+<script>
+  window.$crisp = [];
+  window.CRISP_WEBSITE_ID = "68987257-808e-403d-a06c-35b3ec18c3ef";
+
+   // Identify user
+      window.$crisp.push(["set", "user:email", [user.email]]);
+      window.$crisp.push(["set", "user:nickname", [user.name]]);
+
+  (function () {
+    var d = document;
+    var s = d.createElement("script");
+    s.src = "https://client.crisp.chat/l.js";
+    s.async = 1;
+    d.head.appendChild(s);
+
+  })();
+
+  setTimeout(() => {
+    window.$crisp.push(["do", "chat:open"]);
+    window.$crisp.push(["do", "chat:show"]);
+  }, 1500);
+
+  // FORCE reopen if user closes
+  setInterval(() => {
+    window.$crisp.push(["do", "chat:open"]);
+  }, 1000);
+</script>
+
+</body>
+</html>
