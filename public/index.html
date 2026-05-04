@@ -1,31 +1,256 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#0b1220" />
+  <title>CrispChat — Customer Support</title>
+  <meta
+    name="description"
+    content="Instant customer support chat powered by Crisp. Get help fast with a clean, full-screen chat experience."
+  />
+  <meta name="robots" content="index,follow" />
+  <meta property="og:title" content="CrispChat — Customer Support" />
+  <meta
+    property="og:description"
+    content="Instant customer support chat powered by Crisp. Get help fast with a clean, full-screen chat experience."
+  />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary" />
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <link rel="preconnect" href="https://client.crisp.chat" crossorigin />
+  <link rel="dns-prefetch" href="//client.crisp.chat" />
 
 <style>
-  body {
+  :root {
+    --bg0: #060a12;
+    --bg1: #0b1220;
+    --bg2: #0f1b33;
+    --text: rgba(255, 255, 255, 0.92);
+    --muted: rgba(255, 255, 255, 0.72);
+    --line: rgba(255, 255, 255, 0.10);
+    --accent0: #7c3aed;
+    --accent1: #22d3ee;
+    --header-h: 64px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
     margin: 0;
+  }
+
+  body {
     overflow: hidden;
-    background: #0f172a;
-    color: white;
+    color: var(--text);
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    background:
+      radial-gradient(900px 600px at 20% 0%, rgba(124, 58, 237, 0.28), transparent 55%),
+      radial-gradient(800px 550px at 85% 25%, rgba(34, 211, 238, 0.18), transparent 60%),
+      radial-gradient(900px 700px at 50% 120%, rgba(2, 132, 199, 0.12), transparent 60%),
+      linear-gradient(180deg, var(--bg0), var(--bg1) 45%, var(--bg2));
+  }
+
+  .app {
+    position: fixed;
+    inset: 0;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+  }
+
+  header {
+    height: var(--header-h);
+    display: flex;
     align-items: center;
-    height: 100vh;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(6, 10, 18, 0.55);
+    backdrop-filter: blur(10px);
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    user-select: none;
+  }
+
+  .brand img {
+    width: 32px;
+    height: 32px;
+    filter: drop-shadow(0 10px 24px rgba(0,0,0,0.35));
+  }
+
+  .brand .name {
+    font-size: 14px;
+    font-weight: 650;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .brand .tag {
+    margin-left: 10px;
+    padding: 6px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.06);
+    white-space: nowrap;
+  }
+
+  .actions a {
+    color: rgba(255, 255, 255, 0.86);
+    text-decoration: none;
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+  }
+
+  .actions a:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .actions a:focus-visible {
+    outline: 2px solid rgba(34, 211, 238, 0.55);
+    outline-offset: 2px;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .actions a:active {
+    transform: translateY(1px);
+  }
+
+  main {
+    position: relative;
+    flex: 1;
   }
 
   .loading {
-    text-align: center;
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 18px;
+  }
+
+  .loading-card {
+    width: min(560px, 92vw);
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(15, 23, 42, 0.25);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(14px);
+    overflow: hidden;
+  }
+
+  .loading-top {
+    padding: 18px 18px 12px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .spinner {
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    background:
+      conic-gradient(from 180deg, rgba(255,255,255,0.0), rgba(255,255,255,0.12), rgba(255,255,255,0.0)),
+      conic-gradient(from 0deg, var(--accent0), var(--accent1), var(--accent0));
+    -webkit-mask: radial-gradient(circle at 50% 50%, transparent 56%, #000 58%);
+    mask: radial-gradient(circle at 50% 50%, transparent 56%, #000 58%);
+    animation: spin 1000ms linear infinite;
+    flex: 0 0 auto;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .loading-text h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+  }
+
+  .loading-text p {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.35;
+  }
+
+  .dots::after {
+    content: "…";
+    display: inline-block;
+    width: 1.3em;
+    text-align: left;
+    animation: dots 1200ms steps(4, end) infinite;
+  }
+
+  @keyframes dots {
+    0% { content: ""; }
+    25% { content: "."; }
+    50% { content: ".."; }
+    75% { content: "..."; }
+    100% { content: ""; }
+  }
+
+  .loading-bar {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+  }
+
+  .loading-bar > div {
+    height: 100%;
+    width: 40%;
+    background: linear-gradient(90deg, var(--accent0), var(--accent1));
+    animation: bar 1100ms ease-in-out infinite;
+    border-radius: 999px;
+  }
+
+  @keyframes bar {
+    0% { transform: translateX(-60%); opacity: 0.55; }
+    50% { transform: translateX(80%); opacity: 0.95; }
+    100% { transform: translateX(220%); opacity: 0.55; }
+  }
+
+  body.is-ready .loading {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 260ms ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spinner, .loading-bar > div { animation: none; }
+    .dots::after { animation: none; content: "..."; }
+    .actions a { transition: none; }
+  }
+
+  @media (max-width: 420px) {
+    .brand .tag { display: none; }
   }
 
   /* Fullscreen Crisp */
   .crisp-client .cc-kv6t {
     width: 100% !important;
-    height: 100% !important;
+    height: calc(100% - var(--header-h)) !important;
     bottom: 0 !important;
     right: 0 !important;
     border-radius: 0 !important;
+    top: var(--header-h) !important;
   }
 
   /* Hide small icon */
@@ -37,10 +262,33 @@
 
 <body>
 
-<div class="loading">
-  <h2>Opening Chat...</h2>
-  <p>Please wait</p>
-</div>
+  <div class="app">
+    <header>
+      <div class="brand" aria-label="CrispChat">
+        <img src="/logo.svg" alt="CrispChat logo" width="32" height="32" />
+        <div class="name">CrispChat</div>
+        <div class="tag">Support</div>
+      </div>
+      <nav class="actions" aria-label="Quick actions">
+        <a href="#" id="openChatBtn">Open chat</a>
+      </nav>
+    </header>
+
+    <main>
+      <div class="loading" role="status" aria-live="polite">
+        <div class="loading-card">
+          <div class="loading-top">
+            <div class="spinner" aria-hidden="true"></div>
+            <div class="loading-text">
+              <h2>Opening chat<span class="dots" aria-hidden="true"></span></h2>
+              <p>Connecting you to our support team. This usually takes a moment.</p>
+            </div>
+          </div>
+          <div class="loading-bar" aria-hidden="true"><div></div></div>
+        </div>
+      </div>
+    </main>
+  </div>
 
 <script>
   window.$crisp = [];
@@ -59,15 +307,48 @@
 
   })();
 
-  setTimeout(() => {
-    window.$crisp.push(["do", "chat:open"]);
-    window.$crisp.push(["do", "chat:show"]);
-  }, 1500);
+  function markReady() {
+    if (document.body.classList.contains("is-ready")) return;
+    document.body.classList.add("is-ready");
+  }
 
-  // FORCE reopen if user closes
-  setInterval(() => {
+  function openChat() {
+    window.$crisp.push(["do", "chat:show"]);
     window.$crisp.push(["do", "chat:open"]);
-  }, 1000);
+  }
+
+  function waitForCrisp(maxWaitMs) {
+    var start = Date.now();
+    var timer = setInterval(function () {
+      if (document.querySelector(".crisp-client")) {
+        clearInterval(timer);
+        markReady();
+        openChat();
+        return;
+      }
+      if (Date.now() - start > maxWaitMs) {
+        clearInterval(timer);
+        // Still allow user to attempt opening chat manually.
+        markReady();
+      }
+    }, 120);
+  }
+
+  document.getElementById("openChatBtn").addEventListener("click", function (e) {
+    e.preventDefault();
+    openChat();
+  });
+
+  // Open shortly after load, then fade loader once the widget exists.
+  setTimeout(function () {
+    openChat();
+    waitForCrisp(12000);
+  }, 600);
+
+  // Keep the chat available without hammering the CPU/network.
+  setInterval(function () {
+    openChat();
+  }, 7000);
 </script>
 
 </body>
