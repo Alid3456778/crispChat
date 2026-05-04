@@ -107,28 +107,7 @@
     white-space: nowrap;
   }
 
-  .actions a {
-    color: rgba(255, 255, 255, 0.86);
-    text-decoration: none;
-    font-size: 13px;
-    padding: 8px 10px;
-    border-radius: 10px;
-    transition: background 160ms ease, color 160ms ease, transform 160ms ease;
-  }
-
-  .actions a:hover {
-    background: rgba(255, 255, 255, 0.08);
-  }
-
-  .actions a:focus-visible {
-    outline: 2px solid rgba(34, 211, 238, 0.55);
-    outline-offset: 2px;
-    background: rgba(255, 255, 255, 0.08);
-  }
-
-  .actions a:active {
-    transform: translateY(1px);
-  }
+  /* Reserved for future header actions */
 
   main {
     position: relative;
@@ -236,7 +215,6 @@
   @media (prefers-reduced-motion: reduce) {
     .spinner, .loading-bar > div { animation: none; }
     .dots::after { animation: none; content: "..."; }
-    .actions a { transition: none; }
   }
 
   @media (max-width: 420px) {
@@ -269,9 +247,7 @@
         <div class="name">CrispChat</div>
         <div class="tag">Support</div>
       </div>
-      <nav class="actions" aria-label="Quick actions">
-        <a href="#" id="openChatBtn">Open chat</a>
-      </nav>
+      <div aria-hidden="true"></div>
     </header>
 
     <main>
@@ -333,11 +309,6 @@
       }
     }, 120);
   }
-
-  document.getElementById("openChatBtn").addEventListener("click", function (e) {
-    e.preventDefault();
-    openChat();
-  });
 
   // Open shortly after load, then fade loader once the widget exists.
   setTimeout(function () {

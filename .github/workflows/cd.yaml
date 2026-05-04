@@ -20,5 +20,8 @@ jobs:
           username: ${{ secrets.SSH_VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            echo "working"
+            cd apps/crispChat
+            git pull origin main
+            npm install
+            pm2 restart crispchat
             
