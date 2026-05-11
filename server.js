@@ -17,7 +17,7 @@ app.get("/auth", (req, res) => {
 
   // Generate HMAC token — this is what Crisp uses to verify identity
   const token = crypto
-    .createHmac("sha256", CRISP_SECRET_KEY)
+    .createHmac("sha256","2b0f6b4806cb4978bd62bf980820375e" /* CRISP_SECRET_KEY */)
     .update(email)
     .digest("hex");
 
