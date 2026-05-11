@@ -251,6 +251,23 @@
     </header>
 
     <main>
+      <!-- Email Gate: shown only on first visit -->
+<div id="email-gate" style="display:none; position:absolute; inset:0; z-index:10; background:rgba(6,10,18,0.85); backdrop-filter:blur(8px); align-items:center; justify-content:center;">
+  <div style="width:min(420px,92vw); background:rgba(15,23,42,0.9); border:1px solid rgba(255,255,255,0.12); border-radius:18px; padding:32px; box-shadow:0 24px 80px rgba(0,0,0,0.6);">
+    <h2 style="margin:0 0 6px; font-size:20px; font-weight:700;">Start chatting</h2>
+    <p style="margin:0 0 24px; font-size:13px; color:rgba(255,255,255,0.6);">Enter your details so we can load your chat history next time.</p>
+
+    <form id="email-form">
+      <label style="display:block; font-size:12px; color:rgba(255,255,255,0.5); margin-bottom:6px; letter-spacing:0.5px; text-transform:uppercase;">Name (optional)</label>
+      <input id="name-input" type="text" placeholder="Your name" style="width:100%; padding:10px 14px; margin-bottom:14px; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15); border-radius:10px; color:#fff; font-size:14px; outline:none;" />
+
+      <label style="display:block; font-size:12px; color:rgba(255,255,255,0.5); margin-bottom:6px; letter-spacing:0.5px; text-transform:uppercase;">Email address *</label>
+      <input id="email-input" type="email" placeholder="you@example.com" required style="width:100%; padding:10px 14px; margin-bottom:20px; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15); border-radius:10px; color:#fff; font-size:14px; outline:none;" />
+
+      <button type="submit" style="width:100%; padding:12px; background:linear-gradient(135deg,#7c3aed,#22d3ee); border:none; border-radius:10px; color:#fff; font-size:14px; font-weight:700; cursor:pointer;">Open Chat →</button>
+    </form>
+  </div>
+</div>
       <div class="loading" role="status" aria-live="polite">
         <div class="loading-card">
           <div class="loading-top">
@@ -266,33 +283,49 @@
     </main>
   </div>
 
-<script>
+  <script>
   window.$crisp = [];
   window.CRISP_WEBSITE_ID = "68987257-808e-403d-a06c-35b3ec18c3ef";
+  
+  // 1. Try to load saved email from localStorage
+  const savedEmail = localStorage.getItem("crisp_user_email");
+  const savedName  = localStorage.getItem("crisp_user_name");
+  
+  function initCrisp(email, name) {
+  // Fetch signed token from your server
+  fetch(`/auth?email=${encodeURIComponent(email)}`)
+    .then(r => r.json())
+    .then(data => {
+      window.$crisp.push(["set", "user:email",    [data.email, data.token]]);
+      window.$crisp.push(["set", "user:nickname", [name || email.split("@")[0]]]);
 
-   // Identify user
-      // window.$crisp.push(["set", "user:email", [user.email]]);
-      // window.$crisp.push(["set", "user:nickname", [user.name]]);
+      var s = document.createElement("script");
+      s.src = "https://client.crisp.chat/l.js";
+      s.async = 1;
+      document.head.appendChild(s);
+      waitForCrisp(12000);
+    });
 
-  (function () {
-    var d = document;
-    var s = d.createElement("script");
-    s.src = "https://client.crisp.chat/l.js";
+  
+    // 3. Load the Crisp script
+    var s = document.createElement("script");
+    s.src   = "https://client.crisp.chat/l.js";
     s.async = 1;
-    d.head.appendChild(s);
-
-  })();
-
+    document.head.appendChild(s);
+  
+    waitForCrisp(12000);
+  }
+  
   function markReady() {
     if (document.body.classList.contains("is-ready")) return;
     document.body.classList.add("is-ready");
   }
-
+  
   function openChat() {
     window.$crisp.push(["do", "chat:show"]);
     window.$crisp.push(["do", "chat:open"]);
   }
-
+  
   function waitForCrisp(maxWaitMs) {
     var start = Date.now();
     var timer = setInterval(function () {
@@ -304,23 +337,36 @@
       }
       if (Date.now() - start > maxWaitMs) {
         clearInterval(timer);
-        // Still allow user to attempt opening chat manually.
         markReady();
       }
     }, 120);
   }
+  
+  // 4. If email already saved → load Crisp immediately with identity
+  if (savedEmail) {
+    setTimeout(function () { initCrisp(savedEmail, savedName); }, 300);
+  
+  // 5. If no saved email → show a custom email form first
+  } else {
+    document.getElementById("email-gate").style.display = "flex";
+    document.getElementById("email-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const email = document.getElementById("email-input").value.trim();
+      const name  = document.getElementById("name-input").value.trim();
+      if (!email) return;
+  
+      // Save to localStorage for next visit
+      localStorage.setItem("crisp_user_email", email);
+      localStorage.setItem("crisp_user_name",  name);
+  
+      document.getElementById("email-gate").style.display = "none";
+      initCrisp(email, name);
+    });
+  }
+  
+  // Keep chat open
+  setInterval(openChat, 7000);
 
-  // Open shortly after load, then fade loader once the widget exists.
-  setTimeout(function () {
-    openChat();
-    waitForCrisp(12000);
-  }, 600);
-
-  // Keep the chat available without hammering the CPU/network.
-  setInterval(function () {
-    openChat();
-  }, 7000);
 </script>
-
 </body>
 </html>
