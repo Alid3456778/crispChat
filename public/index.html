@@ -39,18 +39,20 @@
       flex-direction:column;
     }
 
-    header{
-      height:var(--header-h);
-      flex-shrink:0;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding:0 20px;
-      border-bottom:1px solid var(--line);
-      background:rgba(6,10,18,0.7);
-      backdrop-filter:blur(16px);
-      z-index:20;
-    }
+	    header{
+	      min-height:var(--header-h);
+	      flex-shrink:0;
+	      display:flex;
+	      align-items:center;
+	      justify-content:space-between;
+	      padding:0 20px;
+	      gap:12px;
+	      flex-wrap:wrap;
+	      border-bottom:1px solid var(--line);
+	      background:rgba(6,10,18,0.7);
+	      backdrop-filter:blur(16px);
+	      z-index:20;
+	    }
 
     .brand{
       display:flex;
@@ -70,11 +72,65 @@
       background:rgba(255,255,255,0.06);
     }
 
-    .header-right{
-      display:flex;
-      align-items:center;
-      gap:10px;
+	    .header-right{
+	      display:flex;
+	      align-items:center;
+	      gap:10px;
+	      flex-wrap:wrap;
+	      justify-content:flex-end;
+	    }
+
+    .header-btn{
+      appearance:none;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(255,255,255,0.06);
+      color:rgba(255,255,255,0.82);
+      padding:7px 12px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:650;
+      cursor:pointer;
+      transition:transform 120ms ease, border-color 120ms ease, background 120ms ease;
+      line-height:1;
     }
+
+    .header-btn:hover{
+      background:rgba(255,255,255,0.09);
+      border-color:rgba(255,255,255,0.2);
+      transform:translateY(-1px);
+    }
+
+	    .header-btn:active{transform:translateY(0)}
+
+	    .header-actions{
+	      display:flex;
+	      align-items:center;
+	      gap:8px;
+	      flex-wrap:wrap;
+	    }
+
+	    .icon-btn{
+	      width:34px;
+	      height:34px;
+	      display:inline-flex;
+	      align-items:center;
+	      justify-content:center;
+	      border-radius:999px;
+	      border:1px solid rgba(255,255,255,0.14);
+	      background:rgba(255,255,255,0.06);
+	      color:rgba(255,255,255,0.82);
+	      transition:transform 120ms ease, border-color 120ms ease, background 120ms ease;
+	      flex:0 0 auto;
+	    }
+
+	    .icon-btn:hover{
+	      background:rgba(255,255,255,0.09);
+	      border-color:rgba(255,255,255,0.2);
+	      transform:translateY(-1px);
+	    }
+
+	    .icon-btn:active{transform:translateY(0)}
+	    .icon-btn svg{display:block}
 
     .online-badge{
       display:flex;
@@ -439,12 +495,20 @@
   pointer-events: none !important;
 }
 
-    @media(max-width:480px){
-      .brand .tag,.online-badge{display:none}
-      .msg-row{max-width:88%}
-      #messages{padding:14px 10px}
-      #input-bar{padding:0 10px}
-    }
+	    @media(max-width:480px){
+	      header{padding:12px 12px}
+	      .brand .tag,.online-badge{display:none}
+	      .header-right{gap:8px}
+	      .msg-row{max-width:88%}
+	      #messages{padding:14px 10px}
+	      #input-bar{padding:0 10px}
+	    }
+
+	    @media(max-width:360px){
+	      .brand .name{font-size:13px}
+	      .header-btn{padding:7px 10px}
+	      .icon-btn{width:32px;height:32px}
+	    }
 
     @media(prefers-reduced-motion:reduce){
       .online-dot,.typing-bubble span{animation:none}
@@ -460,11 +524,27 @@
         <div class="tag">Support</div>
       </div>
 
-      <div class="header-right">
-        <div class="online-badge">
-          <div class="online-dot"></div>
-          <span>Online</span>
-        </div>
+	      <div class="header-right">
+	        <div class="online-badge">
+	          <div class="online-dot"></div>
+	          <span>Online</span>
+	        </div>
+
+	        <div class="header-actions">
+	          <a class="icon-btn" href="https://wa.me/+918879201044" target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp" title="WhatsApp">
+	            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+	              <path d="M20.52 3.48A11.91 11.91 0 0 0 12.06 0C5.49 0 .17 5.32.17 11.88c0 2.1.55 4.14 1.6 5.95L0 24l6.33-1.66a11.85 11.85 0 0 0 5.7 1.46h.01c6.56 0 11.89-5.33 11.89-11.89 0-3.18-1.24-6.16-3.41-8.43Zm-8.46 18.3h-.01a9.86 9.86 0 0 1-5.03-1.38l-.36-.21-3.75.98 1-3.66-.24-.38a9.84 9.84 0 0 1-1.5-5.25c0-5.45 4.44-9.88 9.9-9.88a9.83 9.83 0 0 1 6.98 2.9 9.82 9.82 0 0 1 2.9 6.98c0 5.46-4.43 9.9-9.89 9.9Zm5.42-7.39c-.3-.15-1.77-.88-2.04-.98-.28-.1-.48-.15-.68.15-.2.3-.78.98-.96 1.18-.18.2-.35.22-.65.07-.3-.15-1.27-.47-2.42-1.49-.89-.79-1.5-1.77-1.68-2.06-.18-.3-.02-.46.13-.61.13-.13.3-.35.45-.53.15-.18.2-.3.3-.5.1-.2.05-.38-.02-.53-.07-.15-.68-1.64-.93-2.25-.24-.58-.49-.5-.68-.5h-.58c-.2 0-.53.07-.8.38-.28.3-1.05 1.03-1.05 2.5 0 1.47 1.08 2.89 1.23 3.1.15.2 2.13 3.25 5.16 4.56.72.31 1.28.5 1.72.64.72.23 1.38.2 1.9.12.58-.09 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.08-.12-.27-.2-.57-.35Z"/>
+	            </svg>
+	          </a>
+
+	          <a class="icon-btn" href="tel:+12095937171" aria-label="Call support" title="Call">
+	            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+	              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.86.3 1.7.54 2.5a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.58-1.06a2 2 0 0 1 2.11-.45c.8.24 1.64.42 2.5.54A2 2 0 0 1 22 16.92Z"/>
+	            </svg>
+	          </a>
+	        </div>
+	
+	        <button id="login-btn" class="header-btn" type="button">Login</button>
 
         <div id="user-pill" class="user-pill">
           <span id="user-pill-email"></span>
@@ -474,20 +554,20 @@
     </header>
 
     <main>
-      <div id="email-gate" class="show" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+      <div id="email-gate" role="dialog" aria-modal="true" aria-labelledby="gate-title">
         <div class="gate-card">
           <div class="gate-icon">💬</div>
-          <h2 id="gate-title">Start a conversation</h2>
-          <p>Enter your email and we'll load your full chat history. Your conversations are saved and available on any device.</p>
+          <h2 id="gate-title">Login (optional)</h2>
+          <p>Add your name/email to load chat history across devices. You can also continue without entering anything.</p>
 
           <form id="email-form" novalidate>
             <label class="field-label" for="name-input">Your name (optional)</label>
             <input id="name-input" class="field-input" type="text" placeholder="e.g. Thaqib" autocomplete="name" />
 
-            <label class="field-label" for="email-input">Email address *</label>
-            <input id="email-input" class="field-input" type="email" placeholder="you@example.com" required autocomplete="email" />
+            <label class="field-label" for="email-input">Email address (optional)</label>
+            <input id="email-input" class="field-input" type="email" placeholder="you@example.com" autocomplete="email" />
 
-            <button type="submit" class="btn-primary" id="gate-btn">Open Chat →</button>
+            <button type="submit" class="btn-primary" id="gate-btn">Continue →</button>
           </form>
         </div>
       </div>
@@ -535,13 +615,50 @@
       var messagesEl    = document.getElementById("messages");
       var typingRow     = document.getElementById("typing-row");
       var inputBar      = document.getElementById("input-bar");
-      var poweredBar    = document.getElementById("powered-bar");
-      var msgInput      = document.getElementById("msg-input");
-      var sendBtn       = document.getElementById("send-btn");
-      var userPill      = document.getElementById("user-pill");
-      var userPillEmail = document.getElementById("user-pill-email");
-      var logoutBtn     = document.getElementById("logout-btn");
-      var typingTimer   = null;
+	      var poweredBar    = document.getElementById("powered-bar");
+	      var msgInput      = document.getElementById("msg-input");
+	      var sendBtn       = document.getElementById("send-btn");
+	      var loginBtn      = document.getElementById("login-btn");
+	      var userPill      = document.getElementById("user-pill");
+	      var userPillEmail = document.getElementById("user-pill-email");
+	      var logoutBtn     = document.getElementById("logout-btn");
+	      var typingTimer   = null;
+
+	      function isGuestEmail(email) {
+	        return typeof email === "string" && email.indexOf("guest+") === 0 && email.indexOf("@crispchat.local") > -1;
+	      }
+
+	      function createGuestEmail() {
+	        var uuid = "";
+	        try {
+	          uuid = (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : "";
+	        } catch (_) {}
+	        if (!uuid) {
+	          uuid = String(Date.now()) + "-" + String(Math.random()).slice(2);
+	        }
+	        return "guest+" + uuid + "@crispchat.local";
+	      }
+
+	      function ensureIdentity() {
+	        var storedEmail = localStorage.getItem("crisp_user_email") || "";
+	        if (!storedEmail) {
+	          storedEmail = createGuestEmail();
+	          localStorage.setItem("crisp_user_email", storedEmail);
+	        }
+	        currentEmail = storedEmail;
+	        currentName  = localStorage.getItem("crisp_user_name") || "";
+	      }
+
+	      function updateHeaderIdentity(email) {
+	        if (isGuestEmail(email)) {
+	          userPill.classList.remove("visible");
+	          loginBtn.textContent = "Login";
+	        } else {
+	          userPillEmail.textContent = email;
+	          userPill.classList.add("visible");
+	          loginBtn.textContent = "Switch";
+	        }
+	      }
   
       // ── Notification helper ───────────────────────────────────────────────
       function sendNotification(title, body) {
@@ -700,9 +817,12 @@
       function initCrisp(email, name) {
         window.$crisp = [];
         window.CRISP_WEBSITE_ID = CRISP_ID;
-  
+
+        // Avoid throwing on invalid user values
+        window.$crisp.push(["safe", true]);
+
         window.$crisp.push(["set", "user:email",    [email]]);
-        window.$crisp.push(["set", "user:nickname", [name || email.split("@")[0]]]);
+        window.$crisp.push(["set", "user:nickname", [name || (isGuestEmail(email) ? "Guest" : email.split("@")[0])]]);
   
         // Hide Crisp's own widget — we use our custom UI
         window.$crisp.push(["do", "chat:hide"]);
@@ -746,8 +866,7 @@
         chatUI.classList.add("show");
         inputBar.style.display  = "flex";
         poweredBar.style.display = "block";
-        userPillEmail.textContent = email;
-        userPill.classList.add("visible");
+        updateHeaderIdentity(email);
   
         loadHistory(email, function () {
           initCrisp(email, name);
@@ -776,6 +895,30 @@
         localStorage.removeItem("crisp_user_name");
         window.location.reload();
       });
+
+      // â”€â”€ Login button: open optional gate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      loginBtn.addEventListener("click", function () {
+        // If currently a real user, prefill for quick edits
+        if (currentEmail && !isGuestEmail(currentEmail)) {
+          emailInput.value = currentEmail;
+        } else {
+          emailInput.value = "";
+        }
+        nameInput.value = currentName || "";
+
+        gateBtn.disabled = false;
+        gateBtn.textContent = "Continue →";
+        emailGate.classList.add("show");
+        setTimeout(function () { nameInput.focus(); }, 0);
+      });
+
+      // Close gate on backdrop click / Escape
+      emailGate.addEventListener("click", function (e) {
+        if (e.target === emailGate) emailGate.classList.remove("show");
+      });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") emailGate.classList.remove("show");
+      });
   
       // ── Gate form submit ───────────────────────────────────────────────────
       emailForm.addEventListener("submit", function (e) {
@@ -783,24 +926,43 @@
   
         var email = emailInput.value.trim();
         var name  = nameInput.value.trim();
-        if (!email) return;
+
+        // If email is provided, it should look like an email (basic check)
+        if (email && email.indexOf("@") === -1) {
+          emailInput.focus();
+          return;
+        }
   
         gateBtn.disabled    = true;
         gateBtn.textContent = "Connecting…";
   
+        // No email entered: keep current (guest) identity, just save the name if any
+        if (!email) {
+          localStorage.setItem("crisp_user_name", name);
+          currentName = name;
+          if (window.$crisp && name) {
+            window.$crisp.push(["set", "user:nickname", [name]]);
+          }
+          emailGate.classList.remove("show");
+          gateBtn.disabled = false;
+          gateBtn.textContent = "Continue →";
+          updateHeaderIdentity(currentEmail);
+          return;
+        }
+
         localStorage.setItem("crisp_user_email", email);
         localStorage.setItem("crisp_user_name",  name);
   
         currentEmail = email;
         currentName  = name;
   
-        showChat(email, name);
+        // Switching identity is simplest via reload (avoids double Crisp bootstraps)
+        window.location.reload();
       });
   
       // ── Auto-login if email already saved ──────────────────────────────────
-      if (currentEmail) {
-        showChat(currentEmail, currentName);
-      }
+      ensureIdentity();
+      showChat(currentEmail, currentName);
   
     })();
   </script>
