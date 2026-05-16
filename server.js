@@ -178,11 +178,23 @@ app.get("/messages", async (req, res) => {
 app.post("/crisp-webhook", async (req, res) => {
   try {
     const event = req.body;
-    if (event.event === "message:send" && event.data?.type === "text") {
+    if (event.event === "message:send") {
       const email   = event.data?.meta?.email || event.data?.user?.email;
-      const message = event.data?.content;
       const session = event.data?.session_id;
       const from    = event.data?.from === "operator" ? "operator" : "customer";
+      const msgType = event.data?.type;
+
+      let message = null;
+
+      if (msgType === "text") {
+        message = event.data?.content;
+      } else if (msgType === "file" && event.data?.content) {
+        // Save file messages in the same [FILE] format used by the frontend
+        const content = event.data.content;
+        const name = content.name || "Attachment";
+        const url  = content.url  || "";
+        if (url) message = `[FILE] ${name} -> ${url}`;
+      }
 
       if (email && message) {
         await pool.query(

@@ -537,6 +537,61 @@
     @media(prefers-reduced-motion:reduce){
       .online-dot,.typing-bubble span{animation:none}
     }
+
+    /* Upload progress toast */
+    #upload-toast {
+      display: none;
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(11,18,32,0.95);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 999px;
+      padding: 8px 18px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.8);
+      z-index: 100;
+      backdrop-filter: blur(12px);
+      gap: 8px;
+      align-items: center;
+      white-space: nowrap;
+    }
+    #upload-toast.show { display: flex; }
+    #upload-toast .toast-spinner {
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: var(--accent1);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Image preview in bubble */
+    .msg-bubble .attach-img {
+      max-width: 220px;
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+      display: block;
+      margin-top: 6px;
+      cursor: pointer;
+    }
+    .msg-bubble .attach-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: inherit;
+      text-decoration: none;
+      font-size: 13px;
+      padding: 6px 10px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      margin-top: 6px;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .msg-bubble .attach-link:hover { background: rgba(255,255,255,0.16); }
   </style>
 </head>
 <body>
@@ -609,14 +664,14 @@
 
     <div id="input-bar" style="display:none;">
       <textarea id="msg-input" rows="1" placeholder="Type a message…" aria-label="Message input"></textarea>
-<!-- 
-      <input id="file-input" type="file" accept="image/*" style="display:none;" />
 
-      <button id="attach-btn" aria-label="Send image" title="Attach image">
+      <input id="file-input" type="file" accept="image/*,application/pdf,.doc,.docx,.txt" style="display:none;" />
+
+      <button id="attach-btn" aria-label="Attach file or image" title="Attach file or image">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 1 1 5.66 5.66l-9.2 9.19a2 2 0 1 1-2.83-2.83l8.49-8.48"/>
         </svg>
-      </button> -->
+      </button>
 
       <button id="send-btn" aria-label="Send">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -627,6 +682,11 @@
     </div>
 
     <div class="powered" id="powered-bar" style="display:none;">Powered by Crisp</div>
+  </div>
+
+  <div id="upload-toast">
+    <div class="toast-spinner"></div>
+    <span id="upload-toast-text">Uploading…</span>
   </div>
 
   <script>
@@ -642,7 +702,6 @@
       var emailGate     = document.getElementById("email-gate");
       var emailForm     = document.getElementById("email-form");
       var emailInput    = document.getElementById("email-input");
-      var nameInput     = document.getElementById("name-input");
       var gateBtn       = document.getElementById("gate-btn");
       var chatUI        = document.getElementById("chat-ui");
       var messagesEl    = document.getElementById("messages");
@@ -766,6 +825,15 @@
   
       // ── Add a message bubble ──────────────────────────────────────────────
       function addBubble(message, sender, timeLabel, showSender) {
+        // Redirect saved file messages to the richer file bubble renderer
+        if (typeof message === "string" && message.indexOf("[FILE] ") === 0 && message.indexOf(" -> ") > -1) {
+          var parts = message.substring(7).split(" -> ");
+          var fileName = parts[0] || "Attachment";
+          var fileUrl  = parts.slice(1).join(" -> ").trim();
+          addFileBubble(fileUrl, fileName, "", sender, timeLabel, showSender);
+          return;
+        }
+
         var empty = messagesEl.querySelector(".chat-empty");
         if (empty) empty.remove();
   
@@ -781,30 +849,8 @@
   
         var bubble = document.createElement("div");
         bubble.className = "msg-bubble";
+        bubble.textContent = message;
 
-        // Render saved file messages: "[FILE] name -> url"
-        if (typeof message === "string" && message.indexOf("[FILE] ") === 0 && message.indexOf(" -> ") > -1) {
-          var parts = message.substring(7).split(" -> ");
-          var fileName = parts[0] || "Attachment";
-          var fileUrl = parts.slice(1).join(" -> ").trim();
-
-          var link = document.createElement("a");
-          link.href = fileUrl || "#";
-          link.target = "_blank";
-          link.rel = "noopener noreferrer";
-          link.textContent = fileName;
-          bubble.appendChild(link);
-
-          if (fileUrl && /\.(png|jpe?g|gif|webp)$/i.test(fileUrl)) {
-            var img = document.createElement("img");
-            img.src = fileUrl;
-            img.alt = fileName;
-            img.loading = "lazy";
-            bubble.appendChild(img);
-          }
-        } else {
-          bubble.textContent = message;
-        }
         row.appendChild(bubble);
   
         if (timeLabel) {
@@ -1003,14 +1049,27 @@
   
         // Incoming operator message
         window.$crisp.push(["on", "message:received", function (data) {
-          if (!data || !data.content) return;
+          if (!data) return;
           hideTyping();
-          addBubble(data.content, "operator", "Just now", true);
-          saveMessage(email, data.content, "operator");
-  
+
+          // Handle file/image messages from operator
+          if (data.type === "file" && data.content && data.content.url) {
+            var fName = data.content.name || "Attachment";
+            var fUrl  = data.content.url;
+            var fMime = data.content.type || "";
+            addFileBubble(fUrl, fName, fMime, "operator", "Just now", true);
+            saveMessage(email, "[FILE] " + fName + " -> " + fUrl, "operator");
+          } else if (data.content) {
+            addBubble(data.content, "operator", "Just now", true);
+            saveMessage(email, data.content, "operator");
+          } else {
+            return;
+          }
+
           // Notify customer if tab is not focused
           if (document.hidden || !document.hasFocus()) {
-            sendNotification("Support replied 💬", data.content);
+            var preview = (data.type === "file") ? "📎 " + (data.content && data.content.name || "File") : data.content;
+            sendNotification("Support replied 💬", preview || "");
           }
         }]);
   
@@ -1063,50 +1122,123 @@
   
       sendBtn.addEventListener("click", sendMessage);
 
-      // function uploadAndSendFile(file) {
-      //   if (!file) return;
-      //   if (!window.$crisp) {
-      //     alert("Chat is still loading. Please try again in a second.");
-      //     return;
-      //   }
+      // ── Upload and send a file/image ───────────────────────────────────────
+      function uploadAndSendFile(file) {
+        if (!file) return;
+        if (!window.$crisp) {
+          alert("Chat is still loading. Please wait a moment and try again.");
+          return;
+        }
 
-      //   attachBtn.disabled = true;
+        // Show upload toast
+        var toast = document.getElementById("upload-toast");
+        var toastText = document.getElementById("upload-toast-text");
+        var isImage = /^image\//i.test(file.type);
+        toastText.textContent = isImage ? "Uploading image…" : "Uploading file…";
+        toast.classList.add("show");
+        attachBtn.disabled = true;
 
-      //   var fd = new FormData();
-      //   fd.append("file", file, file.name);
+        var fd = new FormData();
+        fd.append("file", file, file.name);
 
-      //   fetch("/upload", { method: "POST", body: fd })
-      //     .then(function (r) { return r.json(); })
-      //     .then(function (out) {
-      //       if (!out || !out.url) throw new Error("Upload failed");
+        fetch("/upload", { method: "POST", body: fd })
+          .then(function (r) { return r.json(); })
+          .then(function (out) {
+            if (!out || !out.url) throw new Error("Upload failed");
 
-      //       window.$crisp.push(["do", "message:send", ["file", {
-      //         name: out.name || file.name,
-      //         url: out.url,
-      //         type: out.type || file.type || "application/octet-stream"
-      //       }]]);
+            // Send to Crisp as a "file" message — shows in the operator dashboard
+            window.$crisp.push(["do", "message:send", ["file", {
+              name: out.name || file.name,
+              url: out.url,
+              type: out.type || file.type || "application/octet-stream"
+            }]]);
 
-      //       addBubble("📎 " + (out.name || file.name), "customer", "Just now", false);
-      //       saveMessage(currentEmail, "[FILE] " + (out.name || file.name) + " -> " + out.url, "customer");
-      //     })
-      //     .catch(function (e) {
-      //       console.warn("upload failed:", e);
-      //       alert("Upload failed. Please try a smaller image or check server.");
-      //     })
-      //     .finally(function () {
-      //       attachBtn.disabled = false;
-      //       fileInput.value = "";
-      //     });
-      // }
+            // Show in our custom UI
+            addFileBubble(out.url, out.name || file.name, file.type, "customer", "Just now", false);
+            saveMessage(currentEmail, "[FILE] " + (out.name || file.name) + " -> " + out.url, "customer");
+          })
+          .catch(function (e) {
+            console.warn("upload failed:", e);
+            alert("Upload failed. Max size is 10 MB. Please try again.");
+          })
+          .finally(function () {
+            toast.classList.remove("show");
+            attachBtn.disabled = false;
+            fileInput.value = "";
+          });
+      }
 
-      // attachBtn.addEventListener("click", function () {
-      //   fileInput.click();
-      // });
+      // ── Render a file/image attachment bubble ─────────────────────────────
+      function addFileBubble(url, name, mimeType, sender, timeLabel, showSender) {
+        var empty = messagesEl.querySelector(".chat-empty");
+        if (empty) empty.remove();
 
-      // fileInput.addEventListener("change", function () {
-      //   var file = this.files && this.files[0];
-      //   uploadAndSendFile(file);
-      // });
+        var row = document.createElement("div");
+        row.className = "msg-row " + (sender === "operator" ? "operator" : "customer");
+
+        if (showSender && sender === "operator") {
+          var senderEl = document.createElement("div");
+          senderEl.className = "msg-sender";
+          senderEl.textContent = "Support";
+          row.appendChild(senderEl);
+        }
+
+        var bubble = document.createElement("div");
+        bubble.className = "msg-bubble";
+
+        var isImage = /^image\//i.test(mimeType) || /\.(png|jpe?g|gif|webp)$/i.test(url);
+
+        if (isImage) {
+          var img = document.createElement("img");
+          img.src = url;
+          img.alt = name || "Image";
+          img.className = "attach-img";
+          img.loading = "lazy";
+          img.onclick = function () { window.open(url, "_blank"); };
+          bubble.appendChild(img);
+        } else {
+          var link = document.createElement("a");
+          link.href = url;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.className = "attach-link";
+          link.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+          link.appendChild(document.createTextNode(name || "Attachment"));
+          bubble.appendChild(link);
+        }
+
+        row.appendChild(bubble);
+
+        if (timeLabel) {
+          var time = document.createElement("div");
+          time.className = "msg-time";
+          time.textContent = timeLabel;
+          row.appendChild(time);
+        }
+
+        messagesEl.insertBefore(row, typingRow);
+        scrollBottom();
+      }
+
+      attachBtn.addEventListener("click", function () {
+        fileInput.click();
+      });
+
+      fileInput.addEventListener("change", function () {
+        var file = this.files && this.files[0];
+        if (file) uploadAndSendFile(file);
+      });
+
+      // Drag-and-drop onto the chat area
+      messagesEl.addEventListener("dragover", function (e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+      });
+      messagesEl.addEventListener("drop", function (e) {
+        e.preventDefault();
+        var file = e.dataTransfer.files && e.dataTransfer.files[0];
+        if (file) uploadAndSendFile(file);
+      });
   
       // ── Logout ─────────────────────────────────────────────────────────────
       logoutBtn.addEventListener("click", function () {
