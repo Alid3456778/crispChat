@@ -348,6 +348,22 @@
       max-width:100%;
     }
 
+    .msg-bubble a{
+      color:inherit;
+      text-decoration:underline;
+      text-underline-offset:2px;
+    }
+
+    .msg-bubble img{
+      max-width:240px;
+      width:100%;
+      height:auto;
+      border-radius:12px;
+      display:block;
+      margin-top:8px;
+      border:1px solid rgba(255,255,255,0.12);
+    }
+
     .msg-row.customer .msg-bubble{
       background:linear-gradient(135deg,#6d28d9,#5b5ef4);
       color:#fff;
@@ -456,7 +472,8 @@
     #msg-input:focus{border-color:rgba(124,58,237,0.7)}
     #msg-input::placeholder{color:rgba(255,255,255,0.25)}
 
-    #send-btn{
+    #send-btn,
+    #attach-btn{
       width:42px;
       height:42px;
       flex-shrink:0;
@@ -472,8 +489,15 @@
       transition:opacity 160ms,transform 100ms;
     }
 
-    #send-btn:hover{opacity:.85}
-    #send-btn:active{transform:scale(.92)}
+    #attach-btn{
+      background:rgba(255,255,255,0.08);
+      border:1px solid rgba(255,255,255,0.12);
+    }
+
+    #send-btn:hover,
+    #attach-btn:hover{opacity:.85}
+    #send-btn:active,
+    #attach-btn:active{transform:scale(.92)}
     #send-btn:disabled{opacity:.35;cursor:not-allowed}
 
     .powered{
@@ -561,8 +585,8 @@
           <p>Add your name/email to load chat history across devices. You can also continue without entering anything.</p>
 
           <form id="email-form" novalidate>
-            <label class="field-label" for="name-input">Your name (optional)</label>
-            <input id="name-input" class="field-input" type="text" placeholder="e.g. Thaqib" autocomplete="name" />
+            <!-- <label class="field-label" for="name-input">Your name (optional)</label>
+            <input id="name-input" class="field-input" type="text" placeholder="e.g. Thaqib" autocomplete="name" /> -->
 
             <label class="field-label" for="email-input">Email address (optional)</label>
             <input id="email-input" class="field-input" type="email" placeholder="you@example.com" autocomplete="email" />
@@ -585,6 +609,14 @@
 
     <div id="input-bar" style="display:none;">
       <textarea id="msg-input" rows="1" placeholder="Type a message…" aria-label="Message input"></textarea>
+<!-- 
+      <input id="file-input" type="file" accept="image/*" style="display:none;" />
+
+      <button id="attach-btn" aria-label="Send image" title="Attach image">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 1 1 5.66 5.66l-9.2 9.19a2 2 0 1 1-2.83-2.83l8.49-8.48"/>
+        </svg>
+      </button> -->
 
       <button id="send-btn" aria-label="Send">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -605,6 +637,7 @@
   
       var currentEmail = localStorage.getItem("crisp_user_email") || "";
       var currentName  = localStorage.getItem("crisp_user_name")  || "";
+      var currentToken = localStorage.getItem("crisp_user_token") || "";
   
       var emailGate     = document.getElementById("email-gate");
       var emailForm     = document.getElementById("email-form");
@@ -616,9 +649,11 @@
       var typingRow     = document.getElementById("typing-row");
       var inputBar      = document.getElementById("input-bar");
 	      var poweredBar    = document.getElementById("powered-bar");
-	      var msgInput      = document.getElementById("msg-input");
-	      var sendBtn       = document.getElementById("send-btn");
-	      var loginBtn      = document.getElementById("login-btn");
+		      var msgInput      = document.getElementById("msg-input");
+		      var sendBtn       = document.getElementById("send-btn");
+		      var attachBtn     = document.getElementById("attach-btn");
+          var fileInput    = document.getElementById("file-input");
+	        var loginBtn      = document.getElementById("login-btn");
 	      var userPill      = document.getElementById("user-pill");
 	      var userPillEmail = document.getElementById("user-pill-email");
 	      var logoutBtn     = document.getElementById("logout-btn");
@@ -639,14 +674,36 @@
 	        return "guest+" + uuid + "@crispchat.local";
 	      }
 
+      function createGuestToken() {
+        var token = "";
+        try {
+          token = (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : "";
+        } catch (_) {}
+        if (!token) {
+          token = "guest-" + String(Date.now()) + "-" + String(Math.random()).slice(2);
+        }
+        return token;
+      }
+
+      function tokenForEmail(email) {
+        if (!email) return createGuestToken();
+        return String(email).trim().toLowerCase();
+      }
+
 	      function ensureIdentity() {
 	        var storedEmail = localStorage.getItem("crisp_user_email") || "";
+        var storedToken = localStorage.getItem("crisp_user_token") || "";
 	        if (!storedEmail) {
 	          storedEmail = createGuestEmail();
 	          localStorage.setItem("crisp_user_email", storedEmail);
 	        }
+        if (!storedToken) {
+          storedToken = isGuestEmail(storedEmail) ? createGuestToken() : tokenForEmail(storedEmail);
+          localStorage.setItem("crisp_user_token", storedToken);
+        }
 	        currentEmail = storedEmail;
 	        currentName  = localStorage.getItem("crisp_user_name") || "";
+        currentToken = storedToken;
 	      }
 
 	      function updateHeaderIdentity(email) {
@@ -724,7 +781,30 @@
   
         var bubble = document.createElement("div");
         bubble.className = "msg-bubble";
-        bubble.textContent = message;
+
+        // Render saved file messages: "[FILE] name -> url"
+        if (typeof message === "string" && message.indexOf("[FILE] ") === 0 && message.indexOf(" -> ") > -1) {
+          var parts = message.substring(7).split(" -> ");
+          var fileName = parts[0] || "Attachment";
+          var fileUrl = parts.slice(1).join(" -> ").trim();
+
+          var link = document.createElement("a");
+          link.href = fileUrl || "#";
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.textContent = fileName;
+          bubble.appendChild(link);
+
+          if (fileUrl && /\.(png|jpe?g|gif|webp)$/i.test(fileUrl)) {
+            var img = document.createElement("img");
+            img.src = fileUrl;
+            img.alt = fileName;
+            img.loading = "lazy";
+            bubble.appendChild(img);
+          }
+        } else {
+          bubble.textContent = message;
+        }
         row.appendChild(bubble);
   
         if (timeLabel) {
@@ -747,9 +827,73 @@
       function hideTyping() {
         typingRow.classList.remove("show");
       }
+
+      var LOCAL_MSG_KEY = "crisp_local_messages_v1";
+
+      function readLocalMessages() {
+        try {
+          var raw = localStorage.getItem(LOCAL_MSG_KEY);
+          if (!raw) return [];
+          var parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (_) {
+          return [];
+        }
+      }
+
+      function writeLocalMessages(list) {
+        try {
+          localStorage.setItem(LOCAL_MSG_KEY, JSON.stringify(list.slice(-200)));
+        } catch (_) {}
+      }
+
+      function appendLocalMessage(message, sender) {
+        var list = readLocalMessages();
+        list.push({
+          id: String(Date.now()) + "-" + String(Math.random()).slice(2),
+          sender: sender,
+          message: message,
+          created_at: new Date().toISOString()
+        });
+        writeLocalMessages(list);
+      }
+
+      function migrateLocalMessagesToDb(email, done) {
+        var local = readLocalMessages();
+        if (!local || local.length === 0) {
+          if (done) done();
+          return;
+        }
+
+        var i = 0;
+        function next() {
+          if (i >= local.length) {
+            localStorage.removeItem(LOCAL_MSG_KEY);
+            if (done) done();
+            return;
+          }
+
+          var m = local[i++];
+          fetch("/messages", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email, message: m.message, sender: m.sender })
+          })
+            .then(function () { next(); })
+            .catch(function () { next(); });
+        }
+
+        next();
+      }
   
       // ── Save message to PostgreSQL ─────────────────────────────────────────
       function saveMessage(email, message, sender) {
+        // Before login: keep everything locally. After login: save to DB.
+        if (isGuestEmail(email)) {
+          appendLocalMessage(message, sender);
+          return;
+        }
+
         fetch("/messages", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -761,37 +905,66 @@
   
       // ── Load history from PostgreSQL ───────────────────────────────────────
       function loadHistory(email, cb) {
-        fetch("/messages?email=" + encodeURIComponent(email))
-          .then(function (r) { return r.json(); })
-          .then(function (rows) {
-            messagesEl.innerHTML = "";
-  
-            if (!Array.isArray(rows) || rows.length === 0) {
-              messagesEl.innerHTML =
-                '<div class="chat-empty">' +
-                  '<div class="empty-icon">💬</div>' +
-                  '<p>No previous conversations.<br>Send a message to get started!</p>' +
-                '</div>';
+        messagesEl.innerHTML = "";
+
+        // Guest mode: show local messages only
+        if (isGuestEmail(email)) {
+          var local = readLocalMessages();
+          if (!local || local.length === 0) {
+            messagesEl.innerHTML =
+              '<div class="chat-empty">' +
+                '<div class="empty-icon">💬</div>' +
+                '<p>No previous conversations.<br>Send a message to get started!</p>' +
+              '</div>';
+            messagesEl.appendChild(typingRow);
+            if (cb) cb();
+            return;
+          }
+
+          messagesEl.appendChild(typingRow);
+          addDivider("This device");
+          local.forEach(function (m) {
+            addBubble(m.message, m.sender, formatTime(m.created_at), true);
+          });
+          addDivider("Live chat");
+          if (cb) cb();
+          return;
+        }
+
+        // Logged-in mode: migrate any locally stored guest chat, then load DB history
+        migrateLocalMessagesToDb(email, function () {
+          fetch("/messages?email=" + encodeURIComponent(email))
+            .then(function (r) { return r.json(); })
+            .then(function (rows) {
+              messagesEl.innerHTML = "";
+
+              if (!Array.isArray(rows) || rows.length === 0) {
+                messagesEl.innerHTML =
+                  '<div class="chat-empty">' +
+                    '<div class="empty-icon">💬</div>' +
+                    '<p>No previous conversations.<br>Send a message to get started!</p>' +
+                  '</div>';
+                messagesEl.appendChild(typingRow);
+                if (cb) cb();
+                return;
+              }
+
+              messagesEl.appendChild(typingRow);
+              addDivider("Previous conversation");
+
+              rows.forEach(function (m) {
+                addBubble(m.message, m.sender, formatTime(m.created_at), true);
+              });
+
+              addDivider("Live chat");
+              if (cb) cb();
+            })
+            .catch(function () {
+              messagesEl.innerHTML = '<div class="chat-empty"><p>Could not load history.</p></div>';
               messagesEl.appendChild(typingRow);
               if (cb) cb();
-              return;
-            }
-  
-            messagesEl.appendChild(typingRow);
-            addDivider("Previous conversation");
-  
-            rows.forEach(function (m) {
-              addBubble(m.message, m.sender, formatTime(m.created_at), true);
             });
-  
-            addDivider("Live chat");
-            if (cb) cb();
-          })
-          .catch(function () {
-            messagesEl.innerHTML = '<div class="chat-empty"><p>Could not load history.</p></div>';
-            messagesEl.appendChild(typingRow);
-            if (cb) cb();
-          });
+        });
       }
   
       // ── Send a message ─────────────────────────────────────────────────────
@@ -814,9 +987,10 @@
       }
   
       // ── Init Crisp (hidden engine) ─────────────────────────────────────────
-      function initCrisp(email, name) {
+      function initCrisp(email, name, token) {
         window.$crisp = [];
         window.CRISP_WEBSITE_ID = CRISP_ID;
+        window.CRISP_TOKEN_ID = token || tokenForEmail(email);
 
         // Avoid throwing on invalid user values
         window.$crisp.push(["safe", true]);
@@ -858,7 +1032,7 @@
       }
   
       // ── Show main chat UI ──────────────────────────────────────────────────
-      function showChat(email, name) {
+      function showChat(email, name, token) {
         // Ask for notification permission as soon as user logs in
         requestNotificationPermission();
   
@@ -869,7 +1043,7 @@
         updateHeaderIdentity(email);
   
         loadHistory(email, function () {
-          initCrisp(email, name);
+          initCrisp(email, name, token);
         });
       }
   
@@ -888,11 +1062,57 @@
       });
   
       sendBtn.addEventListener("click", sendMessage);
+
+      // function uploadAndSendFile(file) {
+      //   if (!file) return;
+      //   if (!window.$crisp) {
+      //     alert("Chat is still loading. Please try again in a second.");
+      //     return;
+      //   }
+
+      //   attachBtn.disabled = true;
+
+      //   var fd = new FormData();
+      //   fd.append("file", file, file.name);
+
+      //   fetch("/upload", { method: "POST", body: fd })
+      //     .then(function (r) { return r.json(); })
+      //     .then(function (out) {
+      //       if (!out || !out.url) throw new Error("Upload failed");
+
+      //       window.$crisp.push(["do", "message:send", ["file", {
+      //         name: out.name || file.name,
+      //         url: out.url,
+      //         type: out.type || file.type || "application/octet-stream"
+      //       }]]);
+
+      //       addBubble("📎 " + (out.name || file.name), "customer", "Just now", false);
+      //       saveMessage(currentEmail, "[FILE] " + (out.name || file.name) + " -> " + out.url, "customer");
+      //     })
+      //     .catch(function (e) {
+      //       console.warn("upload failed:", e);
+      //       alert("Upload failed. Please try a smaller image or check server.");
+      //     })
+      //     .finally(function () {
+      //       attachBtn.disabled = false;
+      //       fileInput.value = "";
+      //     });
+      // }
+
+      // attachBtn.addEventListener("click", function () {
+      //   fileInput.click();
+      // });
+
+      // fileInput.addEventListener("change", function () {
+      //   var file = this.files && this.files[0];
+      //   uploadAndSendFile(file);
+      // });
   
       // ── Logout ─────────────────────────────────────────────────────────────
       logoutBtn.addEventListener("click", function () {
         localStorage.removeItem("crisp_user_email");
         localStorage.removeItem("crisp_user_name");
+        localStorage.removeItem("crisp_user_token");
         window.location.reload();
       });
 
@@ -904,12 +1124,12 @@
         } else {
           emailInput.value = "";
         }
-        nameInput.value = currentName || "";
+        // nameInput.value = currentName || "";
 
         gateBtn.disabled = false;
         gateBtn.textContent = "Continue →";
         emailGate.classList.add("show");
-        setTimeout(function () { nameInput.focus(); }, 0);
+        // setTimeout(function () { nameInput.focus(); }, 0);
       });
 
       // Close gate on backdrop click / Escape
@@ -925,7 +1145,7 @@
         e.preventDefault();
   
         var email = emailInput.value.trim();
-        var name  = nameInput.value.trim();
+        // var name  = nameInput.value.trim();
 
         // If email is provided, it should look like an email (basic check)
         if (email && email.indexOf("@") === -1) {
@@ -939,10 +1159,14 @@
         // No email entered: keep current (guest) identity, just save the name if any
         if (!email) {
           localStorage.setItem("crisp_user_name", name);
-          currentName = name;
-          if (window.$crisp && name) {
-            window.$crisp.push(["set", "user:nickname", [name]]);
+          if (!currentToken) {
+            currentToken = isGuestEmail(currentEmail) ? createGuestToken() : tokenForEmail(currentEmail);
+            localStorage.setItem("crisp_user_token", currentToken);
           }
+          // currentName = name;
+          // if (window.$crisp && name) {
+          //   window.$crisp.push(["set", "user:nickname", [name]]);
+          // }
           emailGate.classList.remove("show");
           gateBtn.disabled = false;
           gateBtn.textContent = "Continue →";
@@ -952,9 +1176,11 @@
 
         localStorage.setItem("crisp_user_email", email);
         localStorage.setItem("crisp_user_name",  name);
+        localStorage.setItem("crisp_user_token", tokenForEmail(email));
   
         currentEmail = email;
         currentName  = name;
+        currentToken = tokenForEmail(email);
   
         // Switching identity is simplest via reload (avoids double Crisp bootstraps)
         window.location.reload();
@@ -962,7 +1188,7 @@
   
       // ── Auto-login if email already saved ──────────────────────────────────
       ensureIdentity();
-      showChat(currentEmail, currentName);
+      showChat(currentEmail, currentName, currentToken);
   
     })();
   </script>
