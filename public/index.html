@@ -6,19 +6,11 @@
   <meta name="color-scheme" content="dark" />
   <meta name="theme-color" content="#0b1220" />
   <title>CrispChat — Customer Support</title>
-  <meta
-    name="description"
-    content="Instant customer support chat powered by Crisp. Get help fast with a clean, full-screen chat experience."
-  />
-  <meta name="robots" content="index,follow" />
+  <meta name="description" content="Instant customer support chat powered by Crisp." />
   <meta property="og:title" content="CrispChat — Customer Support" />
-  <meta
-    property="og:description"
-    content="Instant customer support chat powered by Crisp. Get help fast with a clean, full-screen chat experience."
-  />
+  <meta property="og:description" content="Instant customer support chat powered by Crisp." />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary" />
-
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="manifest" href="/site.webmanifest" />
   <link rel="preconnect" href="https://client.crisp.chat" crossorigin />
@@ -29,25 +21,22 @@
     --bg0: #060a12;
     --bg1: #0b1220;
     --bg2: #0f1b33;
-    --text: rgba(255, 255, 255, 0.92);
-    --muted: rgba(255, 255, 255, 0.72);
-    --line: rgba(255, 255, 255, 0.10);
+    --text: rgba(255,255,255,0.92);
+    --muted: rgba(255,255,255,0.55);
+    --line: rgba(255,255,255,0.10);
     --accent0: #7c3aed;
     --accent1: #22d3ee;
     --header-h: 64px;
   }
 
-  * { box-sizing: border-box; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  html, body {
-    height: 100%;
-    margin: 0;
-  }
+  html, body { height: 100%; }
 
   body {
     overflow: hidden;
     color: var(--text);
-    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
     background:
       radial-gradient(900px 600px at 20% 0%, rgba(124, 58, 237, 0.28), transparent 55%),
       radial-gradient(800px 550px at 85% 25%, rgba(34, 211, 238, 0.18), transparent 60%),
@@ -55,202 +44,261 @@
       linear-gradient(180deg, var(--bg0), var(--bg1) 45%, var(--bg2));
   }
 
-  .app {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-  }
+  .app { position: fixed; inset: 0; display: flex; flex-direction: column; }
 
+  /* ── Header ── */
   header {
     height: var(--header-h);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
+    padding: 12px 20px;
     border-bottom: 1px solid var(--line);
-    background: rgba(6, 10, 18, 0.55);
-    backdrop-filter: blur(10px);
+    background: rgba(6,10,18,0.6);
+    backdrop-filter: blur(12px);
+    z-index: 10;
+    flex-shrink: 0;
   }
 
-  .brand {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    min-width: 0;
-    user-select: none;
-  }
-
-  .brand img {
-    width: 32px;
-    height: 32px;
-    filter: drop-shadow(0 10px 24px rgba(0,0,0,0.35));
-  }
-
-  .brand .name {
-    font-size: 14px;
-    font-weight: 650;
-    letter-spacing: 0.2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
+  .brand { display: inline-flex; align-items: center; gap: 10px; user-select: none; }
+  .brand img { width: 32px; height: 32px; }
+  .brand .name { font-size: 14px; font-weight: 700; letter-spacing: 0.2px; }
   .brand .tag {
-    margin-left: 10px;
-    padding: 6px 10px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 999px;
-    font-size: 12px;
-    color: var(--muted);
-    background: rgba(255, 255, 255, 0.06);
-    white-space: nowrap;
+    margin-left: 8px; padding: 4px 10px;
+    border: 1px solid rgba(255,255,255,0.14); border-radius: 999px;
+    font-size: 12px; color: var(--muted); background: rgba(255,255,255,0.06);
   }
 
-  /* Reserved for future header actions */
+  .user-pill {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 999px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .user-pill.visible { display: flex; }
+  .user-pill button {
+    background: none; border: none; cursor: pointer;
+    color: rgba(255,255,255,0.35); font-size: 16px; line-height: 1;
+    padding: 0 0 0 4px;
+    transition: color 150ms;
+  }
+  .user-pill button:hover { color: rgba(255,255,255,0.7); }
 
   main {
-    position: relative;
     flex: 1;
+    display: flex;
+    overflow: hidden;
+    position: relative;
   }
 
-  .loading {
+  #email-gate {
+    display: none;
     position: absolute;
     inset: 0;
-    display: grid;
-    place-items: center;
-    padding: 18px;
+    z-index: 20;
+    background: rgba(6,10,18,0.88);
+    backdrop-filter: blur(10px);
+    align-items: center;
+    justify-content: center;
+  }
+  #email-gate.show { display: flex; }
+
+  .gate-card {
+    width: min(440px, 92vw);
+    background: rgba(15,23,42,0.92);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 36px 32px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  }
+  .gate-card h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .gate-card p { font-size: 13px; color: var(--muted); margin-bottom: 28px; line-height: 1.5; }
+
+  .field-label { display: block; font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.4); letter-spacing: 0.7px; text-transform: uppercase; margin-bottom: 7px; }
+  .field-input {
+    width: 100%; padding: 11px 15px; margin-bottom: 18px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 12px; color: #fff; font-size: 14px; outline: none;
+    transition: border-color 150ms;
+  }
+  .field-input:focus { border-color: rgba(124,58,237,0.7); }
+  .field-input::placeholder { color: rgba(255,255,255,0.25); }
+
+  .btn-primary {
+    width: 100%; padding: 13px;
+    background: linear-gradient(135deg, var(--accent0), var(--accent1));
+    border: none; border-radius: 12px;
+    color: #fff; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: opacity 150ms;
+  }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  #history-panel {
+    display: none;
+    flex-direction: column;
+    width: 380px;
+    min-width: 280px;
+    max-width: 40vw;
+    border-right: 1px solid var(--line);
+    background: rgba(6,10,18,0.45);
+    backdrop-filter: blur(8px);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  #history-panel.show { display: flex; }
+
+  .history-header {
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid var(--line);
+    flex-shrink: 0;
+  }
+  .history-header h3 { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+  .history-header p { font-size: 11px; color: var(--muted); }
+
+  #history-box {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.1) transparent;
   }
 
+  .msg-row { display: flex; flex-direction: column; }
+  .msg-row.customer { align-items: flex-end; }
+  .msg-row.operator { align-items: flex-start; }
+
+  .msg-bubble {
+    max-width: 82%; padding: 9px 14px; border-radius: 14px;
+    font-size: 13px; line-height: 1.45; word-break: break-word;
+  }
+  .msg-row.customer .msg-bubble {
+    background: rgba(124,58,237,0.55); border-bottom-right-radius: 4px;
+  }
+  .msg-row.operator .msg-bubble {
+    background: rgba(255,255,255,0.1); border-bottom-left-radius: 4px;
+  }
+  .msg-meta { font-size: 10px; color: rgba(255,255,255,0.28); margin-top: 4px; padding: 0 4px; }
+
+  .history-empty {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.25); text-align: center; padding: 24px;
+    gap: 8px;
+  }
+  .history-empty svg { opacity: 0.3; }
+  .history-empty p { font-size: 13px; }
+
+  #crisp-area { flex: 1; position: relative; overflow: hidden; }
+
+  .loading {
+    position: absolute; inset: 0;
+    display: grid; place-items: center; padding: 18px;
+    z-index: 5; pointer-events: none; transition: opacity 300ms ease;
+  }
+  .loading.hidden { opacity: 0; }
+
   .loading-card {
-    width: min(560px, 92vw);
+    width: min(520px, 92vw);
     border-radius: 18px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(15, 23, 42, 0.25);
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(15,23,42,0.3);
+    box-shadow: 0 24px 80px rgba(0,0,0,0.55);
     backdrop-filter: blur(14px);
     overflow: hidden;
   }
-
-  .loading-top {
-    padding: 18px 18px 12px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-
+  .loading-top { padding: 18px 18px 12px; display: flex; align-items: center; gap: 14px; }
   .spinner {
-    width: 38px;
-    height: 38px;
-    border-radius: 999px;
-    background:
-      conic-gradient(from 180deg, rgba(255,255,255,0.0), rgba(255,255,255,0.12), rgba(255,255,255,0.0)),
-      conic-gradient(from 0deg, var(--accent0), var(--accent1), var(--accent0));
+    width: 38px; height: 38px; border-radius: 999px; flex: 0 0 auto;
+    background: conic-gradient(from 0deg, var(--accent0), var(--accent1), var(--accent0));
     -webkit-mask: radial-gradient(circle at 50% 50%, transparent 56%, #000 58%);
     mask: radial-gradient(circle at 50% 50%, transparent 56%, #000 58%);
-    animation: spin 1000ms linear infinite;
-    flex: 0 0 auto;
+    animation: spin 900ms linear infinite;
   }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  .loading-text h2 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 700;
-    letter-spacing: 0.2px;
-  }
-
-  .loading-text p {
-    margin: 4px 0 0;
-    font-size: 13px;
-    color: var(--muted);
-    line-height: 1.35;
-  }
-
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text h2 { font-size: 17px; font-weight: 700; }
+  .loading-text p { font-size: 12px; color: var(--muted); margin-top: 3px; }
   .dots::after {
-    content: "…";
-    display: inline-block;
-    width: 1.3em;
-    text-align: left;
+    content: ""; display: inline-block; width: 1.2em; text-align: left;
     animation: dots 1200ms steps(4, end) infinite;
   }
+  @keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
 
-  @keyframes dots {
-    0% { content: ""; }
-    25% { content: "."; }
-    50% { content: ".."; }
-    75% { content: "..."; }
-    100% { content: ""; }
-  }
-
-  .loading-bar {
-    height: 6px;
-    background: rgba(255, 255, 255, 0.08);
-    overflow: hidden;
-  }
-
+  .loading-bar { height: 5px; background: rgba(255,255,255,0.08); overflow: hidden; }
   .loading-bar > div {
-    height: 100%;
-    width: 40%;
-    background: linear-gradient(90deg, var(--accent0), var(--accent1));
-    animation: bar 1100ms ease-in-out infinite;
+    height: 100%; width: 38%; background: linear-gradient(90deg, var(--accent0), var(--accent1));
     border-radius: 999px;
+    animation: bar 1100ms ease-in-out infinite;
   }
+  @keyframes bar { 0% { transform: translateX(-70%); opacity: 0.5; } 50% { transform: translateX(80%); opacity: 1; } 100% { transform: translateX(230%); opacity: 0.5; } }
 
-  @keyframes bar {
-    0% { transform: translateX(-60%); opacity: 0.55; }
-    50% { transform: translateX(80%); opacity: 0.95; }
-    100% { transform: translateX(220%); opacity: 0.55; }
+  .crisp-client .cc-kv6t {
+    width: 100% !important;
+    height: 100% !important;
+    bottom: 0 !important;
+    right: 0 !important;
+    top: 0 !important;
+    border-radius: 0 !important;
   }
+  .crisp-client .cc-1brb6 { display: none !important; }
 
-  body.is-ready .loading {
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 260ms ease;
+  @media (max-width: 640px) {
+    #history-panel { width: 100%; max-width: 100%; border-right: none; border-bottom: 1px solid var(--line); max-height: 260px; }
+    main { flex-direction: column; }
+    .brand .tag { display: none; }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .spinner, .loading-bar > div { animation: none; }
     .dots::after { animation: none; content: "..."; }
   }
-
-  @media (max-width: 420px) {
-    .brand .tag { display: none; }
-  }
-
-  /* Fullscreen Crisp */
-  .crisp-client .cc-kv6t {
-    width: 100% !important;
-    height: calc(100% - var(--header-h)) !important;
-    bottom: 0 !important;
-    right: 0 !important;
-    border-radius: 0 !important;
-    top: var(--header-h) !important;
-  }
-
-  /* Hide small icon */
-  .crisp-client .cc-1brb6 {
-    display: none !important;
-  }
 </style>
 </head>
-
 <body>
 
-  <div class="app">
-    <header>
-      <div class="brand" aria-label="CrispChat">
-        <img src="/logo.svg" alt="CrispChat logo" width="32" height="32" />
-        <div class="name">CrispChat</div>
-        <div class="tag">Support</div>
-      </div>
-      <div aria-hidden="true"></div>
-    </header>
+<div class="app">
 
-    <main>
+  <!-- ── Header ── -->
+  <header>
+    <div class="brand" aria-label="CrispChat">
+      <img src="/logo.svg" alt="CrispChat logo" width="32" height="32" />
+      <div class="name">CrispChat</div>
+      <div class="tag">Support</div>
+    </div>
+    <div id="user-pill" class="user-pill" aria-live="polite">
+      <span id="user-pill-email"></span>
+      <button id="logout-btn" title="Switch account">✕</button>
+    </div>
+  </header>
+
+  <!-- ── Main ── -->
+  <main>
+
+    <div id="email-gate" class="show" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+      <div class="gate-card">
+        <div class="gate-icon">💬</div>
+        <h2 id="gate-title">Login (optional)</h2>
+        <p>Add your email to load chat history across devices. You can also continue without entering anything.</p>
+
+        <form id="email-form" novalidate>
+          <label class="field-label" for="email-input">Email address (optional)</label>
+          <input id="email-input" class="field-input" type="email" placeholder="you@example.com" autocomplete="email" />
+          <button type="submit" class="btn-primary" id="gate-btn">Continue →</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="history-panel" aria-label="Chat history"></div>
+    <div id="crisp-area">
       <div class="loading" role="status" aria-live="polite">
         <div class="loading-card">
           <div class="loading-top">
@@ -263,64 +311,535 @@
           <div class="loading-bar" aria-hidden="true"><div></div></div>
         </div>
       </div>
-    </main>
-  </div>
+    </div>
+  </main>
+</div>
+
+<div id="upload-toast">
+  <div class="toast-spinner" aria-hidden="true"></div>
+  <span id="upload-toast-text">Uploading…</span>
+</div>
 
 <script>
-  window.$crisp = [];
-  window.CRISP_WEBSITE_ID = "68987257-808e-403d-a06c-35b3ec18c3ef";
+(function () {
+  "use strict";
 
-   // Identify user
-      // window.$crisp.push(["set", "user:email", [user.email]]);
-      // window.$crisp.push(["set", "user:nickname", [user.name]]);
+  var CRISP_ID = "68987257-808e-403d-a06c-35b3ec18c3ef";
+  var currentEmail = localStorage.getItem("crisp_user_email") || "";
+  var currentName  = localStorage.getItem("crisp_user_name")  || "";
+  var currentToken = localStorage.getItem("crisp_user_token") || "";
 
-  (function () {
-    var d = document;
-    var s = d.createElement("script");
-    s.src = "https://client.crisp.chat/l.js";
-    s.async = 1;
-    d.head.appendChild(s);
+  var emailGate     = document.getElementById("email-gate");
+  var emailForm     = document.getElementById("email-form");
+  var emailInput    = document.getElementById("email-input");
+  var gateBtn       = document.getElementById("gate-btn");
+  var historyPanel  = document.getElementById("history-panel");
+  var userPill      = document.getElementById("user-pill");
+  var userPillEmail = document.getElementById("user-pill-email");
+  var logoutBtn     = document.getElementById("logout-btn");
+  var chatUI        = document.getElementById("crisp-area");
+  var messagesEl    = document.getElementById("messages");
+  var typingRow     = document.getElementById("typing-row");
+  var inputBar      = document.getElementById("input-bar");
+  var poweredBar    = document.getElementById("powered-bar");
+  var msgInput      = document.getElementById("msg-input");
+  var sendBtn       = document.getElementById("send-btn");
+  var attachBtn     = document.getElementById("attach-btn");
+  var fileInput     = document.getElementById("file-input");
+  var loginBtn      = document.getElementById("login-btn");
+  var typingTimer   = null;
 
-  })();
-
-  function markReady() {
-    if (document.body.classList.contains("is-ready")) return;
-    document.body.classList.add("is-ready");
+  function isGuestEmail(email) {
+    return typeof email === "string" && email.indexOf("guest+") === 0 && email.indexOf("@crispchat.local") > -1;
   }
 
-  function openChat() {
-    window.$crisp.push(["do", "chat:show"]);
-    window.$crisp.push(["do", "chat:open"]);
+  function createGuestEmail() {
+    var uuid = "";
+    try { uuid = (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : ""; } catch (_) {}
+    if (!uuid) { uuid = String(Date.now()) + "-" + String(Math.random()).slice(2); }
+    return "guest+" + uuid + "@crispchat.local";
   }
 
-  function waitForCrisp(maxWaitMs) {
-    var start = Date.now();
-    var timer = setInterval(function () {
-      if (document.querySelector(".crisp-client")) {
-        clearInterval(timer);
-        markReady();
-        openChat();
+  function createGuestToken() {
+    var token = "";
+    try { token = (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : ""; } catch (_) {}
+    if (!token) { token = "guest-" + String(Date.now()) + "-" + String(Math.random()).slice(2); }
+    return token;
+  }
+
+  function tokenForEmail(email) {
+    if (!email) return createGuestToken();
+    return String(email).trim().toLowerCase();
+  }
+
+  function ensureIdentity() {
+    var storedEmail = localStorage.getItem("crisp_user_email") || "";
+    var storedToken = localStorage.getItem("crisp_user_token") || "";
+
+    if (!storedEmail) {
+      storedEmail = createGuestEmail();
+      localStorage.setItem("crisp_user_email", storedEmail);
+    }
+    if (!storedToken) {
+      storedToken = isGuestEmail(storedEmail) ? createGuestToken() : tokenForEmail(storedEmail);
+      localStorage.setItem("crisp_user_token", storedToken);
+    }
+
+    currentEmail = storedEmail;
+    currentName  = localStorage.getItem("crisp_user_name") || "";
+    currentToken = storedToken;
+  }
+
+  function updateHeaderIdentity(email) {
+    if (isGuestEmail(email)) {
+      userPill.classList.remove("visible");
+    } else {
+      userPillEmail.textContent = email;
+      userPill.classList.add("visible");
+    }
+  }
+
+  function sendNotification(title, body) {
+    if (!("Notification" in window)) return;
+    if (Notification.permission !== "granted") return;
+    var notif = new Notification(title, {
+      body: body.length > 80 ? body.substring(0, 80) + "…" : body,
+      icon: "/logo.svg",
+      badge: "/logo.svg",
+      tag: "crisp-support",
+      renotify: true
+    });
+    notif.onclick = function () { window.focus(); notif.close(); };
+    setTimeout(function () { notif.close(); }, 6000);
+  }
+
+  function requestNotificationPermission() {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }
+
+  function formatTime(iso) {
+    var d = new Date(iso);
+    return d.toLocaleDateString([], { month: "short", day: "numeric" }) + " " +
+           d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+
+  function scrollBottom() {
+    if (messagesEl) messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function addDivider(label) {
+    var d = document.createElement("div");
+    d.className = "divider";
+    d.textContent = label;
+    if (messagesEl && typingRow) messagesEl.insertBefore(d, typingRow);
+  }
+
+  function addBubble(message, sender, timeLabel, showSender) {
+    if (typeof message === "string" && message.indexOf("[FILE] ") === 0 && message.indexOf(" -> ") > -1) {
+      var parts = message.substring(7).split(" -> ");
+      var fileName = parts[0] || "Attachment";
+      var fileUrl = parts.slice(1).join(" -> ").trim();
+      addFileBubble(fileUrl, fileName, "", sender, timeLabel, showSender);
+      return;
+    }
+
+    var empty = messagesEl.querySelector(".chat-empty");
+    if (empty) empty.remove();
+
+    var row = document.createElement("div");
+    row.className = "msg-row " + (sender === "operator" ? "operator" : "customer");
+
+    if (showSender && sender === "operator") {
+      var senderEl = document.createElement("div");
+      senderEl.className = "msg-sender";
+      senderEl.textContent = "Support";
+      row.appendChild(senderEl);
+    }
+
+    var bubble = document.createElement("div");
+    bubble.className = "msg-bubble";
+    bubble.textContent = message;
+    row.appendChild(bubble);
+
+    if (timeLabel) {
+      var time = document.createElement("div");
+      time.className = "msg-time";
+      time.textContent = timeLabel;
+      row.appendChild(time);
+    }
+
+    if (messagesEl && typingRow) messagesEl.insertBefore(row, typingRow);
+    scrollBottom();
+  }
+
+  function showTyping() {
+    if (typingRow) {
+      typingRow.classList.add("show");
+      scrollBottom();
+    }
+  }
+
+  function hideTyping() {
+    if (typingRow) typingRow.classList.remove("show");
+  }
+
+  var LOCAL_MSG_KEY = "crisp_local_messages_v1";
+
+  function readLocalMessages() {
+    try {
+      var raw = localStorage.getItem(LOCAL_MSG_KEY);
+      if (!raw) return [];
+      var parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function writeLocalMessages(list) {
+    try { localStorage.setItem(LOCAL_MSG_KEY, JSON.stringify(list.slice(-200))); } catch (_) {}
+  }
+
+  function appendLocalMessage(message, sender) {
+    var list = readLocalMessages();
+    list.push({
+      id: String(Date.now()) + "-" + String(Math.random()).slice(2),
+      sender: sender,
+      message: message,
+      created_at: new Date().toISOString()
+    });
+    writeLocalMessages(list);
+  }
+
+  function migrateLocalMessagesToDb(email, done) {
+    var local = readLocalMessages();
+    if (!local || local.length === 0) {
+      if (done) done();
+      return;
+    }
+
+    var i = 0;
+    function next() {
+      if (i >= local.length) {
+        localStorage.removeItem(LOCAL_MSG_KEY);
+        if (done) done();
         return;
       }
-      if (Date.now() - start > maxWaitMs) {
-        clearInterval(timer);
-        // Still allow user to attempt opening chat manually.
-        markReady();
-      }
-    }, 120);
+      var m = local[i++];
+      fetch("/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email, message: m.message, sender: m.sender })
+      })
+      .then(function () { next(); })
+      .catch(function () { next(); });
+    }
+    next();
   }
 
-  // Open shortly after load, then fade loader once the widget exists.
-  setTimeout(function () {
-    openChat();
-    waitForCrisp(12000);
-  }, 600);
+  function saveMessage(email, message, sender) {
+    if (isGuestEmail(email)) {
+      appendLocalMessage(message, sender);
+      return;
+    }
 
-  // Keep the chat available without hammering the CPU/network.
-  setInterval(function () {
-    openChat();
-  }, 7000);
+    fetch("/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email, message: message, sender: sender })
+    }).catch(function (e) { console.warn("save failed:", e); });
+  }
+
+  function loadHistory(email, cb) {
+    if (!messagesEl) return;
+    messagesEl.innerHTML = "";
+
+    if (isGuestEmail(email)) {
+      var local = readLocalMessages();
+      if (!local || local.length === 0) {
+        messagesEl.innerHTML =
+          '<div class="chat-empty"><div class="empty-icon">💬</div><p>No previous conversations.<br>Send a message to get started!</p></div>';
+        if (typingRow) messagesEl.appendChild(typingRow);
+        if (cb) cb();
+        return;
+      }
+      if (typingRow) messagesEl.appendChild(typingRow);
+      addDivider("This device");
+      local.forEach(function (m) { addBubble(m.message, m.sender, formatTime(m.created_at), true); });
+      addDivider("Live chat");
+      if (cb) cb();
+      return;
+    }
+
+    migrateLocalMessagesToDb(email, function () {
+      fetch("/messages?email=" + encodeURIComponent(email))
+        .then(function (r) { return r.json(); })
+        .then(function (rows) {
+          messagesEl.innerHTML = "";
+
+          if (!Array.isArray(rows) || rows.length === 0) {
+            messagesEl.innerHTML =
+              '<div class="chat-empty"><div class="empty-icon">💬</div><p>No previous conversations.<br>Send a message to get started!</p></div>';
+            if (typingRow) messagesEl.appendChild(typingRow);
+            if (cb) cb();
+            return;
+          }
+
+          if (typingRow) messagesEl.appendChild(typingRow);
+          addDivider("Previous conversation");
+          rows.forEach(function (m) { addBubble(m.message, m.sender, formatTime(m.created_at), true); });
+          addDivider("Live chat");
+          if (cb) cb();
+        })
+        .catch(function () {
+          messagesEl.innerHTML = '<div class="chat-empty"><p>Could not load history.</p></div>';
+          if (typingRow) messagesEl.appendChild(typingRow);
+          if (cb) cb();
+        });
+    });
+  }
+
+  function sendMessage() {
+    var text = msgInput.value.trim();
+    if (!text) return;
+
+    msgInput.value = "";
+    msgInput.style.height = "";
+    sendBtn.disabled = true;
+
+    addBubble(text, "customer", "Just now", false);
+    saveMessage(currentEmail, text, "customer");
+
+    if (window.$crisp) {
+      window.$crisp.push(["do", "message:send", ["text", text]]);
+    }
+
+    setTimeout(function () { sendBtn.disabled = false; }, 400);
+  }
+
+  function initCrisp(email, name, token) {
+    window.$crisp = [];
+    window.CRISP_WEBSITE_ID = CRISP_ID;
+    window.CRISP_TOKEN_ID = token || tokenForEmail(email);
+    window.$crisp.push(["safe", true]);
+    window.$crisp.push(["set", "user:email", [email]]);
+    window.$crisp.push(["set", "user:nickname", [name || (isGuestEmail(email) ? "Guest" : email.split("@")[0])]]);
+    window.$crisp.push(["do", "chat:hide"]);
+
+    window.$crisp.push(["on", "message:received", function (data) {
+      if (!data) return;
+      hideTyping();
+      if (data.type === "file" && data.content && data.content.url) {
+        var fName = data.content.name || "Attachment";
+        var fUrl = data.content.url;
+        var fMime = data.content.type || "";
+        addFileBubble(fUrl, fName, fMime, "operator", "Just now", true);
+        saveMessage(email, "[FILE] " + fName + " -> " + fUrl, "operator");
+      } else if (data.content) {
+        addBubble(data.content, "operator", "Just now", true);
+        saveMessage(email, data.content, "operator");
+      }
+      if (document.hidden || !document.hasFocus()) {
+        var preview = (data.type === "file") ? "📎 " + (data.content && data.content.name || "File") : data.content;
+        sendNotification("Support replied 💬", preview || "");
+      }
+    }]);
+
+    window.$crisp.push(["on", "message:composing:operator", function (data) {
+      if (data && data.composing) {
+        showTyping();
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(hideTyping, 5000);
+      } else {
+        hideTyping();
+      }
+    }]);
+
+    var s = document.createElement("script");
+    s.src = "https://client.crisp.chat/l.js";
+    s.async = 1;
+    document.head.appendChild(s);
+  }
+
+  function showChat(email, name, token) {
+    requestNotificationPermission();
+    emailGate.classList.remove("show");
+    updateHeaderIdentity(email);
+    loadHistory(email, function () {
+      initCrisp(email, name, token);
+    });
+  }
+
+  msgInput.addEventListener("input", function () {
+    this.style.height = "auto";
+    this.style.height = Math.min(this.scrollHeight, 110) + "px";
+  });
+
+  msgInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  sendBtn.addEventListener("click", sendMessage);
+
+  function uploadAndSendFile(file) {
+    if (!file) return;
+    if (!window.$crisp) {
+      alert("Chat is still loading. Please wait a moment and try again.");
+      return;
+    }
+    var toast = document.getElementById("upload-toast");
+    var toastText = document.getElementById("upload-toast-text");
+    var isImage = /^image\//i.test(file.type);
+    toastText.textContent = isImage ? "Uploading image…" : "Uploading file…";
+    toast.classList.add("show");
+    attachBtn.disabled = true;
+
+    var fd = new FormData();
+    fd.append("file", file, file.name);
+
+    fetch("/upload", { method: "POST", body: fd })
+      .then(function (r) { return r.json(); })
+      .then(function (out) {
+        if (!out || !out.url) throw new Error("Upload failed");
+        window.$crisp.push(["do", "message:send", ["file", {
+          name: out.name || file.name,
+          url: out.url,
+          type: out.type || file.type || "application/octet-stream"
+        }]]);
+        addFileBubble(out.url, out.name || file.name, file.type, "customer", "Just now", false);
+        saveMessage(currentEmail, "[FILE] " + (out.name || file.name) + " -> " + out.url, "customer");
+      })
+      .catch(function (e) {
+        console.warn("upload failed:", e);
+        alert("Upload failed. Max size is 10 MB. Please try again.");
+      })
+      .finally(function () {
+        toast.classList.remove("show");
+        attachBtn.disabled = false;
+        fileInput.value = "";
+      });
+  }
+
+  function addFileBubble(url, name, mimeType, sender, timeLabel, showSender) {
+    var empty = messagesEl.querySelector(".chat-empty");
+    if (empty) empty.remove();
+
+    var row = document.createElement("div");
+    row.className = "msg-row " + (sender === "operator" ? "operator" : "customer");
+
+    if (showSender && sender === "operator") {
+      var senderEl = document.createElement("div");
+      senderEl.className = "msg-sender";
+      senderEl.textContent = "Support";
+      row.appendChild(senderEl);
+    }
+
+    var bubble = document.createElement("div");
+    bubble.className = "msg-bubble";
+
+    var isImage = /^image\//i.test(mimeType) || /\.(png|jpe?g|gif|webp)$/i.test(url);
+    if (isImage) {
+      var img = document.createElement("img");
+      img.src = url;
+      img.alt = name || "Image";
+      img.className = "attach-img";
+      img.loading = "lazy";
+      img.onclick = function () { window.open(url, "_blank"); };
+      bubble.appendChild(img);
+    } else {
+      var link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.className = "attach-link";
+      link.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+      link.appendChild(document.createTextNode(name || "Attachment"));
+      bubble.appendChild(link);
+    }
+
+    row.appendChild(bubble);
+    if (timeLabel) {
+      var time = document.createElement("div");
+      time.className = "msg-time";
+      time.textContent = timeLabel;
+      row.appendChild(time);
+    }
+
+    if (messagesEl && typingRow) messagesEl.insertBefore(row, typingRow);
+    scrollBottom();
+  }
+
+  attachBtn.addEventListener("click", function () { fileInput.click(); });
+  fileInput.addEventListener("change", function () {
+    var file = this.files && this.files[0];
+    if (file) uploadAndSendFile(file);
+  });
+
+  if (messagesEl) {
+    messagesEl.addEventListener("dragover", function (e) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; });
+    messagesEl.addEventListener("drop", function (e) { e.preventDefault(); var file = e.dataTransfer.files && e.dataTransfer.files[0]; if (file) uploadAndSendFile(file); });
+  }
+
+  logoutBtn.addEventListener("click", function () {
+    localStorage.removeItem("crisp_user_email");
+    localStorage.removeItem("crisp_user_name");
+    localStorage.removeItem("crisp_user_token");
+    window.location.reload();
+  });
+
+  loginBtn.addEventListener("click", function () {
+    emailInput.value = currentEmail && !isGuestEmail(currentEmail) ? currentEmail : "";
+    gateBtn.disabled = false;
+    gateBtn.textContent = "Continue →";
+    emailGate.classList.add("show");
+  });
+
+  emailGate.addEventListener("click", function (e) { if (e.target === emailGate) emailGate.classList.remove("show"); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") emailGate.classList.remove("show"); });
+
+  emailForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var email = emailInput.value.trim();
+    var name  = currentName || (email ? email.split("@")[0] : "");
+
+    if (email && email.indexOf("@") === -1) {
+      emailInput.focus();
+      return;
+    }
+
+    gateBtn.disabled = true;
+    gateBtn.textContent = "Connecting…";
+
+    if (!email) {
+      localStorage.setItem("crisp_user_name", name);
+      if (!currentToken) {
+        currentToken = isGuestEmail(currentEmail) ? createGuestToken() : tokenForEmail(currentEmail);
+        localStorage.setItem("crisp_user_token", currentToken);
+      }
+      emailGate.classList.remove("show");
+      gateBtn.disabled = false;
+      gateBtn.textContent = "Continue →";
+      updateHeaderIdentity(currentEmail);
+      return;
+    }
+
+    localStorage.setItem("crisp_user_email", email);
+    localStorage.setItem("crisp_user_name",  name);
+    localStorage.setItem("crisp_user_token", tokenForEmail(email));
+    currentEmail = email;
+    currentName  = name;
+    currentToken = tokenForEmail(email);
+    window.location.reload();
+  });
+
+  ensureIdentity();
+  showChat(currentEmail, currentName, currentToken);
+})();
 </script>
-
 </body>
 </html>
