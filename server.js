@@ -1,24 +1,34 @@
 require("dotenv").config();
-const express = require("express");
-const path = require("path");
-const crypto = require("crypto");
-const fs = require("fs");
-const multer = require("multer");
+const express  = require("express");
+const path     = require("path");
+const crypto   = require("crypto");
+const fs       = require("fs");
+const multer   = require("multer");
 const { Pool } = require("pg");
 
-const app = express();
-const PORT = process.env.PORT || 6728;
+const app  = express();
+const PORT = 6728;
 
-app.use(express.json());
+const pool = new Pool({
+  host:     process.env.PG_HOST     || "localhost",
+  port:     process.env.PG_PORT     || 5432,
+  database: process.env.PG_DATABASE || "crispy",
+  user:     process.env.PG_USER     || "postgres",
+  password: process.env.PG_PASSWORD || "",
+});
+
+pool.connect()
+  .then(() => console.log("✅ PostgreSQL connected to 'crispy'"))
+  .catch(err => console.error("❌ DB connection error:", err.message));
+
 app.use(express.static(path.join(__dirname, "public")));
+app.use(express.json());
+
+// Serve uploaded files (stored under ./public/uploads)
 app.use("/uploads", express.static(path.join(__dirname, "public", "uploads")));
 
 const uploadDir = path.join(__dirname, "public", "uploads");
-try {
-  fs.mkdirSync(uploadDir, { recursive: true });
-} catch (_) {}
-
-const pool = new Pool();
+try { fs.mkdirSync(uploadDir, { recursive: true }); } catch (_) {}
 
 const upload = multer({
   storage: multer.diskStorage({
@@ -35,9 +45,10 @@ const upload = multer({
       cb(null, `${base || "file"}-${unique}${ext || ""}`);
     }
   }),
-  limits: { fileSize: 10 * 1024 * 1024 }
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB
 });
 
+// Upload a file and return a public URL suitable for Crisp "file" messages
 app.post("/upload", upload.single("file"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
@@ -50,49 +61,90 @@ app.post("/upload", upload.single("file"), (req, res) => {
   });
 });
 
+// ── HMAC auth token for Crisp identity ──────────────────────────────────────
 app.get("/auth", (req, res) => {
   const email = req.query.email;
   if (!email) return res.status(400).json({ error: "Email required" });
-  res.json({ email: email, name: email.split("@")[0] });
+
+  const secret = process.env.CRISP_SECRET_KEY || "";
+  const token  = crypto.createHmac("sha256", secret).update(email).digest("hex");
+  res.json({ email, token });
 });
+
 
 app.post("/api/get-or-create-user", async (req, res) => {
-  try {
-    const { email, name } = req.body;
 
-    if (!email) {
-      return res.status(400).json({ error: "Email required" });
+    try {
+
+        const { email, name } = req.body;
+
+        if (!email) {
+            return res.status(400).json({
+                error: "Email required"
+            });
+        }
+
+        // Check existing visitor
+        const existingUser = await pool.query(
+            `
+            SELECT * FROM visitors
+            WHERE email = $1
+            `,
+            [email]
+        );
+
+        // EXISTING USER
+        if (existingUser.rows.length > 0) {
+
+            return res.json({
+                success: true,
+                visitor: existingUser.rows[0]
+            });
+        }
+
+        // CREATE NEW USER
+        const crispToken = crypto.randomUUID();
+
+        const newUser = await pool.query(
+            `
+            INSERT INTO visitors
+            (email, name, crisp_token)
+
+            VALUES ($1, $2, $3)
+
+            RETURNING *
+            `,
+            [
+                email,
+                name || "Guest",
+                crispToken
+            ]
+        );
+
+        return res.json({
+            success: true,
+            visitor: newUser.rows[0]
+        });
+
+    } catch (err) {
+
+        console.error(err);
+
+        return res.status(500).json({
+            error: "Server error"
+        });
     }
-
-    const existingUser = await pool.query(
-      `SELECT * FROM visitors WHERE email = $1`,
-      [email]
-    );
-
-    if (existingUser.rows.length > 0) {
-      return res.json({ success: true, visitor: existingUser.rows[0] });
-    }
-
-    const crispToken = crypto.randomUUID();
-    const newUser = await pool.query(
-      `INSERT INTO visitors (email, name, crisp_token) VALUES ($1, $2, $3) RETURNING *`,
-      [email, name || "Guest", crispToken]
-    );
-
-    return res.json({ success: true, visitor: newUser.rows[0] });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Server error" });
-  }
 });
 
+// ── Save a message ────────────────────────────────────────────────────────────
 app.post("/messages", async (req, res) => {
   const { email, session_id, sender, message } = req.body;
   if (!email || !message) return res.status(400).json({ error: "Missing fields" });
 
   try {
     await pool.query(
-      `INSERT INTO chat_messages (email, session_id, sender, message) VALUES ($1, $2, $3, $4)`,
+      `INSERT INTO chat_messages (email, session_id, sender, message)
+       VALUES ($1, $2, $3, $4)`,
       [email, session_id || null, sender || "customer", message]
     );
     res.json({ success: true });
@@ -102,13 +154,17 @@ app.post("/messages", async (req, res) => {
   }
 });
 
+// ── Get chat history for an email ─────────────────────────────────────────────
 app.get("/messages", async (req, res) => {
   const { email } = req.query;
   if (!email) return res.status(400).json({ error: "Email required" });
 
   try {
     const result = await pool.query(
-      `SELECT sender, message, created_at FROM chat_messages WHERE email = $1 ORDER BY created_at ASC`,
+      `SELECT sender, message, created_at
+       FROM chat_messages
+       WHERE email = $1
+       ORDER BY created_at ASC`,
       [email]
     );
     res.json(result.rows);
@@ -118,28 +174,32 @@ app.get("/messages", async (req, res) => {
   }
 });
 
+// ── Crisp Webhook — auto-saves operator replies ───────────────────────────────
 app.post("/crisp-webhook", async (req, res) => {
   try {
     const event = req.body;
     if (event.event === "message:send") {
-      const email = event.data?.meta?.email || event.data?.user?.email;
+      const email   = event.data?.meta?.email || event.data?.user?.email;
       const session = event.data?.session_id;
-      const from = event.data?.from === "operator" ? "operator" : "customer";
+      const from    = event.data?.from === "operator" ? "operator" : "customer";
       const msgType = event.data?.type;
+
       let message = null;
 
       if (msgType === "text") {
         message = event.data?.content;
       } else if (msgType === "file" && event.data?.content) {
+        // Save file messages in the same [FILE] format used by the frontend
         const content = event.data.content;
         const name = content.name || "Attachment";
-        const url = content.url || "";
+        const url  = content.url  || "";
         if (url) message = `[FILE] ${name} -> ${url}`;
       }
 
       if (email && message) {
         await pool.query(
-          `INSERT INTO chat_messages (email, session_id, sender, message) VALUES ($1, $2, $3, $4)`,
+          `INSERT INTO chat_messages (email, session_id, sender, message)
+           VALUES ($1, $2, $3, $4)`,
           [email, session || null, from, message]
         );
       }
